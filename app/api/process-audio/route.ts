@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySignature } from "@upstash/qstash/dist/nextjs";
+import { verifySignature } from "@upstash/qstash/nextjs";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import axios from "axios";
 
-// This is your background worker
 async function handler(req: NextRequest) {
   try {
     const { uploadId, s3Path } = await req.json();
@@ -22,12 +22,32 @@ async function handler(req: NextRequest) {
 
     // Mock API response data
     const mockApiResponse = {
-      words:,
-      utterances:
+      words: [
+        { text: "Hello", start: 0.0, end: 0.5 },
+        { text: "world", start: 0.6, end: 1.0 },
+        { text: "This", start: 2.0, end: 2.2 }
+      ],
+      utterances: [
+        {
+          speaker: "A",
+          text: "Hello world",
+          start: 0.0,
+          end: 1.0,
+          sentiment: "neutral",
+          sentimentScore: 0.0
+        },
+        {
+          speaker: "B",
+          text: "This is a test",
+          start: 2.0,
+          end: 3.0,
+          sentiment: "positive",
+          sentimentScore: 0.8
+        }
+      ]
     };
-
     // --- DATA PERSISTENCE ---
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const speakersMap = new Map<string, string>();
 
       for (const utterance of mockApiResponse.utterances) {
@@ -47,7 +67,7 @@ async function handler(req: NextRequest) {
             startTime: utterance.start,
             endTime: utterance.end,
             sentiment: utterance.sentiment,
-            sentimentScore: utterance.sentiment_score,
+            sentimentScore: utterance.sentimentScore,
             uploadId: uploadId,
             speakerId: speakerRecord.id,
           },
@@ -86,4 +106,4 @@ async function handler(req: NextRequest) {
 }
 
 // Secure the endpoint with QStash signature verification
-export const POST = verifySignature(handler);
+export const POST = verifySignature(handler as unknown as any);

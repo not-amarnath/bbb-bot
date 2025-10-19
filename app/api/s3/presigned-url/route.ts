@@ -1,7 +1,7 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextRequest, NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 
 const s3Client = new S3Client({
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File name and type are required" }, { status: 400 });
     }
 
-    const id = uuidv4();
+    const id = randomUUID();
     const key = `${id}-${fileName}`;
 
     const command = new PutObjectCommand({
